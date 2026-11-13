@@ -1,6 +1,6 @@
 ---
 name: gitultra-setup
-description: Automates end-to-end installation of GitUltra (eng-metrics-suite or eng-metrics-suite-pro) -- environment detection, .env setup, docker compose up, repo discovery, optional Jira integration, and a verified sample report. Use when a user asks to set up, install, or configure GitUltra.
+description: Automates end-to-end installation of GitUltra (gitultra-metrics-suite, free or paid plans) -- environment detection, .env setup, docker compose up, repo discovery, optional Jira integration, and a verified sample report. Use when a user asks to set up, install, or configure GitUltra.
 ---
 
 # GitUltra Setup
@@ -21,14 +21,18 @@ hand, not just a "setup complete" message.
 
 Run these checks before asking the user anything:
 
-1. **Which tier is this?** Check whether `docker-compose.yml` in the
-   current directory references an `eng-api` service (`grep -q
-   "eng-api:" docker-compose.yml`). If yes, this is
-   `eng-metrics-suite-pro` (paid tier) -- follow the "Team tier only"
-   notes below in addition to everything else. If no `docker-compose.yml`
-   exists at all, or it doesn't look like this repo, stop and ask the
-   user to `cd` into their `eng-metrics-suite`/`eng-metrics-suite-pro`
-   checkout first (or clone it) -- don't guess a location.
+1. **Is this the GitUltra bundle?** Check that `docker-compose.yml` in
+   the current directory defines a `git-processor` service (`grep -q
+   "git-processor:" docker-compose.yml`). One bundle runs every plan:
+   the free plan with no license key, Team/Enterprise with one (asked
+   in Step 2). If no `docker-compose.yml` exists at all, or it doesn't
+   look like this repo, stop and ask the user to `cd` into their
+   `gitultra-metrics-suite` checkout first (or clone
+   https://github.com/GitUltraHQ/gitultra-metrics-suite) -- don't guess
+   a location. A checkout of the archived `eng-metrics-suite` repo
+   (compose file has no `eng-api:` service) should switch first: point
+   the user at docs.gitultra.com's Updating page, "Coming from
+   eng-metrics-suite", rather than running the switch for them.
 2. **Prerequisites**: check `docker --version` and `docker compose
    version`. If either is missing, stop and tell the user what to
    install -- don't attempt to install Docker itself, that's out of
@@ -79,10 +83,14 @@ for it. Ask (in one pass, not one question at a time):
   repos or name patterns (see Step 4's `discover_config.yaml`) -- default
   to no filtering if they don't care, don't force this decision.
 
-**Team tier only**: also ask for `GITULTRA_LICENSE_KEY` (issued by
-GitUltra after purchase -- if they don't have one, stop and point them
-to support@gitultra.com rather than guessing or proceeding without it).
-**Do not ask for `ENG_API_KEY`** -- generate it yourself with `openssl
+**Plan**: ask whether they have a GitUltra license key (Team or
+Enterprise plan). If not, that's the free plan: leave the whole "Paid
+plans" section of `.env` blank and skip every "Paid plans only" note
+below -- `eng-api` and `gitultra-mcp` will idle with one log line, which
+is correct. If they do, they paste `GITULTRA_LICENSE_KEY` into `.env`
+themselves (it's a credential; don't ask them to send it in chat).
+
+**Paid plans only**: **Do not ask for `ENG_API_KEY`** -- generate it yourself with `openssl
 rand -hex 32` and write it into `.env` directly; this is the customer's
 own credential for their own future dashboard integrations, not
 something they need to have an opinion about at install time. Tell them
@@ -133,7 +141,7 @@ afterward where to find it in `.env` if they want to use it later.
 ## Step 4: Run the actual setup
 
 1. `docker compose up -d` -- starts Postgres plus the workers (and
-   `eng-api`/`gitultra-mcp` on Team tier). The workers exiting
+   `eng-api`/`gitultra-mcp`, which idle on the free plan). The workers exiting
    immediately in the logs is expected (nothing queued yet), not a
    failure -- don't misinterpret `docker compose logs` showing an
    exited worker as broken.
@@ -170,7 +178,9 @@ Confirm the stack is actually healthy before declaring victory:
 - `docker compose ps` -- every service should show `running` (or
   `exited (0)` for a worker that's caught up, which is healthy, not
   broken -- exit code non-zero is the actual problem signal).
-- **Team tier only**: confirm `eng-api` actually started successfully
+- **Free plan**: `docker compose logs eng-api gitultra-mcp` showing one
+  "no license key" line each is the expected, healthy state.
+- **Paid plans only**: confirm `eng-api` actually started successfully
   with the license key -- `docker compose logs eng-api | tail -20`
   should show a normal startup, not a license-check failure exiting
   the process. If it failed, the license key is the first thing to
