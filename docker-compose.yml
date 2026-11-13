@@ -195,23 +195,28 @@ services:
       # /var/lib/eng-metrics-suite/teams.csv.
       - /var/lib/eng-metrics-suite:/var/lib/eng-metrics-suite:ro
 
-  # Paid-tier plugin (public GHCR package, gated by a signed license key
-  # -- see this repo's README for setup). Long-running, unlike
-  # eng-reports/rewrite-ratio, since it's a REST API a customer's own
-  # dashboards poll.
+  # Paid plans: REST API (public GHCR image, gated by a signed license
+  # key -- see this repo's README). Long-running, unlike eng-reports, since
+  # it's an API your own dashboards poll. On the free plan
+  # (GITULTRA_LICENSE_KEY blank) it logs one "no license key" line and
+  # idles: no restarts, no port listening, nothing to configure.
   eng-api:
-    image: ghcr.io/gitultrahq/eng-api:v1.9.0
+    image: ghcr.io/gitultrahq/eng-api:v1.10.0
     restart: unless-stopped
     ports:
       - "${ENG_API_PORT:-8000}:8000"
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgres://postgres:${POSTGRES_PASSWORD:-changeme}@postgres:5432/git_stats}
-      # Required, no default -- see eng-api's README's "Auth" section.
-      # Set this to your own secret; it's never issued or stored by us.
-      API_KEY: ${ENG_API_KEY:?set ENG_API_KEY in your .env}
-      # Required, no default -- the license key you were issued; see
+      # Required once GITULTRA_LICENSE_KEY is set (eng-api exits with a
+      # message if it's missing then) -- see eng-api's README's "Auth"
+      # section. Your own secret; it's never issued or stored by us.
+      # `:-` rather than `:?` on purpose: `:?` fails `docker compose up`
+      # for the whole stack, free plan included.
+      API_KEY: ${ENG_API_KEY:-}
+      # The license key you were issued. Blank = free plan (idle, above);
+      # an invalid or expired key exits non-zero with the reason. See
       # eng-api's README's "Distribution" section.
-      GITULTRA_LICENSE_KEY: ${GITULTRA_LICENSE_KEY:?set GITULTRA_LICENSE_KEY in your .env}
+      GITULTRA_LICENSE_KEY: ${GITULTRA_LICENSE_KEY:-}
       TEAM_MAP_PATH: ${ENG_API_TEAM_MAP_PATH:-}
       # Optional -- absent means the org-level roles feature (Admin/
       # Executive/Director) is off entirely, no behavior change. See
@@ -270,9 +275,10 @@ services:
   # http://<this-host>:${GITULTRA_MCP_PORT:-8100}/mcp (see gitultra-mcp's
   # own README for a sample Claude Desktop/Code config). Public GHCR
   # image, license-gated -- see gitultra-mcp's own README's
-  # "Distribution" section.
+  # "Distribution" section. Idles with one log line on the free plan,
+  # same as eng-api.
   gitultra-mcp:
-    image: ghcr.io/gitultrahq/gitultra-mcp:v1.3.1
+    image: ghcr.io/gitultrahq/gitultra-mcp:v1.4.0
     restart: unless-stopped
     ports:
       - "${GITULTRA_MCP_PORT:-8100}:8000"
@@ -280,11 +286,11 @@ services:
       ENG_API_BASE_URL: http://eng-api:8000
       # Same value as ENG_API_KEY above -- this server's own inbound
       # auth reuses eng-api's key rather than managing a second secret.
-      ENG_API_KEY: ${ENG_API_KEY:?set ENG_API_KEY in your .env}
-      # Required, no default -- your license key, covering the
-      # "gitultra-mcp" product (can be the same key as eng-api's above
-      # if it covers both products); see gitultra-mcp's README.
-      GITULTRA_LICENSE_KEY: ${GITULTRA_LICENSE_KEY:?set GITULTRA_LICENSE_KEY in your .env}
+      ENG_API_KEY: ${ENG_API_KEY:-}
+      # Your license key, covering the "gitultra-mcp" product (can be the
+      # same key as eng-api's above if it covers both products); blank =
+      # free plan (idle). See gitultra-mcp's README.
+      GITULTRA_LICENSE_KEY: ${GITULTRA_LICENSE_KEY:-}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
     depends_on:
       - eng-api
