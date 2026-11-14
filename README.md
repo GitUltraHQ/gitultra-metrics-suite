@@ -110,6 +110,18 @@ Then generate the report:
 docker compose run --rm eng-reports allocation_report.py --output /out/allocation.pdf
 ```
 
+## Checking pipeline health
+
+Imports that fail, credentials that get rejected and repos that go quiet
+don't announce themselves. The Pipeline Health Report (free, no license
+key) lists what's broken, why, and the command that fixes it:
+
+```
+docker compose run --rm eng-reports pipeline_health_report.py --output /out/pipeline-health.pdf
+```
+
+Details: [Pipeline Health Report](https://docs.gitultra.com/pipeline-health-report/).
+
 ## Moving to a paid plan
 
 1. Put your license key in `.env` as `GITULTRA_LICENSE_KEY`, and set
