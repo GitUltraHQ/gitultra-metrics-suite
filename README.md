@@ -120,6 +120,11 @@ key) lists what's broken, why, and the command that fixes it:
 docker compose run --rm eng-reports pipeline_health_report.py --output /out/pipeline-health.pdf
 ```
 
+On a paid plan, an Admin (see `ENG_API_ORG_ROLES_PATH`) without server
+access can also ask their agent for it: gitultra-mcp's
+`email_admin_pipeline_health_report` tool emails the same PDF to the
+Admin's own address (needs the `SMTP_*` settings).
+
 Details: [Pipeline Health Report](https://docs.gitultra.com/pipeline-health-report/).
 
 ## Moving to a paid plan
