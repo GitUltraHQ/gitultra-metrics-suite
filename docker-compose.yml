@@ -152,7 +152,7 @@ services:
   # --output), so this container isn't meant to be left running. See the
   # README for how to invoke it with `docker compose run`.
   eng-reports:
-    image: ghcr.io/gitultrahq/eng-reports:v1.10.1
+    image: ghcr.io/gitultrahq/eng-reports:v1.11.0
     entrypoint: ["python3"]
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgres://postgres:${POSTGRES_PASSWORD:-changeme}@postgres:5432/git_stats}
@@ -201,7 +201,7 @@ services:
   # (GITULTRA_LICENSE_KEY blank) it logs one "no license key" line and
   # idles: no restarts, no port listening, nothing to configure.
   eng-api:
-    image: ghcr.io/gitultrahq/eng-api:v1.11.0
+    image: ghcr.io/gitultrahq/eng-api:v1.12.0
     restart: unless-stopped
     ports:
       - "${ENG_API_PORT:-8000}:8000"
