@@ -83,7 +83,7 @@ services:
   # mirror-cache equivalent needed here: vendor APIs are queried with an
   # incremental "since" filter directly, no local clone involved.
   pr-processor:
-    image: ghcr.io/gitultrahq/pr-processor:v1.5.2
+    image: ghcr.io/gitultrahq/pr-processor:v1.5.3
     restart: unless-stopped
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgres://postgres:${POSTGRES_PASSWORD:-changeme}@postgres:5432/git_stats}
